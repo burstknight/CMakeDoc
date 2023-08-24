@@ -126,3 +126,63 @@ $(BIN_DIR)/calcPow.o:
 clean:
 	rm -rf $(BIN_DIR)/*
 ```
+
+這裡稍微解釋一下上面的`makefile`的內容。`makefile`中的指令也可以當作是一種程式語言，它有自己的語法。為了方便說明，上面的`makefile`的內容可以拆成兩個部分。
+
+先從第一部分開始說起，第一部分的內容如下：
+```make
+SRC_DIR := ./src
+BIN_DIR := ./build
+TARGET := myPow
+
+CFLAGS := 
+CC := gcc
+```
+這部分可以看做是在宣告變數，所以這裡總共宣告了五個變數:
+1. 宣告變數`SRC_DIR`，其內容為`./src`，用來設定專案`example01`中所有的source code都放在哪一個資料夾中
+2. 宣告變數`BIN_DIR`，其內容為`./build`，用來指定在編譯的過程中所產生的檔案要放在哪個資料夾中
+3. 宣告變數`TARGET`，其內容為`myPow`，用來指定最終會編譯出名為`myPow`的可執行檔
+4. 宣告變數`CFLAGS`，用來追加編譯的參數，這個後面會解釋怎麼使用
+5. 宣告變數`CC`，其內容為`gcc`，用來指定使用`gcc`來編譯程式碼
+如果想取用這些變數的值，可以使用`$()`把變數包在裡面。比方說如果想取得變數`TARGET`，就可以用`$(TARGET)`來取得其值`myPow`。
+
+在說明第二部份以前，先從怎麼在`makefile`中寫指令來編譯程式碼。在`makefile`中通常會用下面的的架構，來定義編譯的規則:
+```make
+<target>: <requirements>
+    <command 01>
+    <command 02>
+    ...
+    <command N>
+```
+接下來說明這個架構每一個意義:
+* `<target>`: 它可以是一個標籤，也可以用來代表一個或一組source code編譯後的檔案名稱。
+* `<requirements>`: 如果`<target>`是欲編譯的目標檔，則`<requirements>`則是用來表示編譯該目標檔所需的相依檔。假如相依檔的數量不只一個，就需要用空格隔開。
+* `<command 01>`: 為了能建置專案中所有的source code，用來指定需要執行的shell指令，需要注意一點，在`<target>`底下的每行指令前面必須使用`TAB`鍵縮排才行。
+
+第二部分的內容如下：
+```make
+.PHONY: all clean
+
+all: $(BIN_DIR)/calcPow.o
+	$(CC) $(CFLAGS) $(SRC_DIR)/main.c $(BIN_DIR)/calcPow.o -o $(BIN_DIR)/$(TARGET)
+
+$(BIN_DIR)/calcPow.o:
+	mkdir -p $(BIN_DIR)
+	$(CC) -c $(CFLAGS) $(SRC_DIR)/calcPow.c -I$(SRC_DIR) -o $@
+
+clean:
+	rm -rf $(BIN_DIR)/*
+```
+接下來說明第二部分的內容。先從`.PHONY: all clean`開始說明，這一行用來告訴`make`在`makefile`中的`all`和`clean`只是標籤。`make`也可從這一行知道，使用這個`makefile`建置專案時有兩個動作可以使用:
+ 1. `make all`: 可以把專案`example01`建置成可執行檔`myPow`。
+ 2. `make clean`: 可以清除所有建置出來的檔案。
+
+為了方便說明第二部分後面的內容，我們就透過`make`建置的流程來說明:
+1. 在shell中下指令`make all`時，`make`就會執行標籤`all`這邊的指令。
+2. 在執行`all`這個標籤底下的指令以前，必須先把相依檔`$(BIN_DIR)/calcPow.o`編譯出來，所以`make`就會去執行標籤`$(BIN_DIR)/calcPow.o`的指令。
+3. 因為標籤`$(BIN_DIR)/calcPow.o`沒有相依檔，所以直接執行下面的兩行指令:
+    1. 先建立出目錄`build`。
+    2. 把資料夾`src`中的`calcPow.c`編譯成`calcPow.o`，並且把產生出來的檔案存放到目錄`build`中。
+4. 因為建置成可執行檔所需的相依檔`calcPow.o`已經編譯出來，所以回到標籤`all`，繼續執行在標籤`all`下面的指令，把可執行檔`myPow`編譯出來並且存放在目錄`build`中。
+
+在這個範例中，由於資料夾`build`專門存放建置時產生出來的檔案，所以這個資料夾也可以稱為`Binary tree`。會需要這種資料夾，可以避免建置的過程中產生過多中間檔，把整個專案搞得很亂。
