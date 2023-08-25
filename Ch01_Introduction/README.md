@@ -31,10 +31,10 @@ gcc main.c -o hello
 
 使用`make`建置的好處是，在編譯的過程中會根據`makefile`的規則檢查哪些檔案已經修改過且需要再編譯一次，又有哪些檔案沒更動過且不需要再編一次。這對於大型專案來說，可以節省不少編譯的時間，因為只要曾編譯過一次，`make`就只會針對更改過的檔案或新增的檔案編譯，不需要對專案中所有的檔案重新編譯。
 
-#### example01
-接下來用範例來簡單說明怎麼使用`make`來建置一個專案。這邊建議是照著下面的流程玩過一遍會比較好，假如懶得做一遍，可以直接用[example01](./example1/README.md)。
+#### exmaple_01
+接下來用範例來簡單說明怎麼使用`make`來建置一個專案。這邊建議是照著下面的流程玩過一遍會比較好，假如懶得做一遍，可以直接用[exmaple_01](./example1/README.md)。
 
-請先建一個資料夾，該資料夾的名稱可以任意使用，這邊就用`example01`來命名，後面說明比較能統一。在資料夾`example01`中再建一個資料夾，請將該資料夾命名為`src`。資料夾`src`用來放所有的source code，這包含`.c`、`.cpp`、`.h`和`.hpp`這些檔案。也因為資料夾`src`主要用來放source code，所以這個資料夾也可以稱為`Source Tree`。
+請先建一個資料夾，該資料夾的名稱可以任意使用，這邊就用`exmaple_01`來命名，後面說明比較能統一。在資料夾`exmaple_01`中再建一個資料夾，請將該資料夾命名為`src`。資料夾`src`用來放所有的source code，這包含`.c`、`.cpp`、`.h`和`.hpp`這些檔案。也因為資料夾`src`主要用來放source code，所以這個資料夾也可以稱為`Source Tree`。
 
 ##### 新增標頭檔`calcPow.h`
 接下來請在資料夾`src`中新增一個標頭檔`calcPow.h`，該檔案的內容如下:
@@ -105,7 +105,7 @@ int main(int argc, char** argv){
 ```
 
 ##### 新增`makefile`
-接下來該編輯`makefile`了。請先在目錄`example01`中新增檔案`makefile`，該檔案的內容如下:
+接下來該編輯`makefile`了。請先在目錄`exmaple_01`中新增檔案`makefile`，該檔案的內容如下:
 ```make
 SRC_DIR := ./src
 BIN_DIR := ./build
@@ -139,7 +139,7 @@ CFLAGS :=
 CC := gcc
 ```
 這部分可以看做是在宣告變數，所以這裡總共宣告了五個變數:
-1. 宣告變數`SRC_DIR`，其內容為`./src`，用來設定專案`example01`中所有的source code都放在哪一個資料夾中
+1. 宣告變數`SRC_DIR`，其內容為`./src`，用來設定專案`exmaple_01`中所有的source code都放在哪一個資料夾中
 2. 宣告變數`BIN_DIR`，其內容為`./build`，用來指定在編譯的過程中所產生的檔案要放在哪個資料夾中
 3. 宣告變數`TARGET`，其內容為`myPow`，用來指定最終會編譯出名為`myPow`的可執行檔
 4. 宣告變數`CFLAGS`，用來追加編譯的參數，這個後面會解釋怎麼使用
@@ -174,7 +174,7 @@ clean:
 	rm -rf $(BIN_DIR)/*
 ```
 接下來說明第二部分的內容。先從`.PHONY: all clean`開始說明，這一行用來告訴`make`在`makefile`中的`all`和`clean`只是標籤。`make`也可從這一行知道，使用這個`makefile`建置專案時有兩個動作可以使用:
- 1. `make all`: 可以把專案`example01`建置成可執行檔`myPow`。
+ 1. `make all`: 可以把專案`exmaple_01`建置成可執行檔`myPow`。
  2. `make clean`: 可以清除所有建置出來的檔案。
 
 為了方便說明第二部分後面的內容，我們就透過`make`建置的流程來說明:
@@ -190,36 +190,36 @@ clean:
 ##### 使用`make`建置
 在編輯完`makefile`以後，就來說明如何透過`make`這個工具來建置專案。
 
-我們先從下這個指令來建置專案`example01`:
+我們先從下這個指令來建置專案`exmaple_01`:
 ```sh
 make all
 ```
 執行完指令以後，會發現專案中多了一個目錄`build`，而且在該目錄底下會有建置過程中產生的中間檔案，以及最終目標檔`myPow`。
-![example01_make_all](./images/example_01_make_all.png)
+![exmaple_01_make_all](./images/example_01_make_all.png)
 
 其實我們也可以直接使用下面這個指令來編譯:
 ```sh
 make
 ```
 這個指令也同樣可以建置專案，而且執行結果與使用`make all`相同，因為`all`這個標籤在`make`中是一個特殊的標籤，它代表了預設編譯的動作。
-![example01_make](./images/exmaple_01_make.png)
+![exmaple_01_make](./images/exmaple_01_make.png)
 
 現在我們來使用這個指令來清除目錄`build`中所有的檔案:
 ```sh
 make clean
 ```
 使用完這個指令以後，目錄`build`所有的檔案都會不清除掉。有時前幾次建置的中間檔可能有問題，就可以先用`make clean`把編譯出來的所有檔案都先清掉，這樣就可以重新再編譯一次。
-![example01_make_clean](./images/example_01_make_clean.png)
+![exmaple_01_make_clean](./images/example_01_make_clean.png)
 
 其實還有一種情況也會使用到`make clean`，那就是在專案中的程式碼沒更動到的情況下，而且已經編譯過了，可是想再編譯一次並且追加一些編譯參數。在`gcc`這個指令中，可以加上參數`-O3`，這個時候編譯的過程中編譯器會最佳化編譯出來的檔案，使編譯出來的程式檔案更小且跑起來更快一些。假設我們的專案中有幾個bug需要修正，但我們還不知道那些bug在哪裡，這個時候就應該使用`gdb`這類的工具debug。如果要使用`gdb`，就必須再編譯時加上一個參數`-g`才行，編譯出來的檔案才會有額外的資訊方便debug。
 
-前面說明`makefile`的時候有提到可以宣告變數，在我們使用`make`這個工具時，就可以用上這些變數在編譯時做些特別的事。剛剛我們建置的時候沒有額外加編譯參數，現在我們可以試試看加上`-g`這個參數來編譯看看。前面也有提到，在範例`example01`的`makefile`中有宣告變數`CFLAGS`，這個變數用來給予編譯參數，所以我們可以在使用`make`這個指令的同時搭配`CFLAGS`給予編譯參數。
+前面說明`makefile`的時候有提到可以宣告變數，在我們使用`make`這個工具時，就可以用上這些變數在編譯時做些特別的事。剛剛我們建置的時候沒有額外加編譯參數，現在我們可以試試看加上`-g`這個參數來編譯看看。前面也有提到，在範例`exmaple_01`的`makefile`中有宣告變數`CFLAGS`，這個變數用來給予編譯參數，所以我們可以在使用`make`這個指令的同時搭配`CFLAGS`給予編譯參數。
 ```sh
 make clean
 make CFLAGS+=-g
 ```
 等編譯完成，可執行檔`myPow`會因為包含一些除錯用的資訊，檔案可能會比較大，但是我們也可以使用`gdb`除錯。
-![example01_make_debug](./images/example01_make_debug.png)
+![exmaple_01_make_debug](./images/exmaple_01_make_debug.png)
 
 ### 使用cmake建置
 前面介紹了怎麼使用`make`建置一個專案，不管專案中有多大，只要`makefile`的編譯規則寫好，都能很輕易建置專案，而且在建置的過程中只會對有更新過的檔案編譯，所以可以節省很多時間。有這麼好用的工具可以使用，為什麼還要使用`cmake`呢？那是因為`make`這個工具沒有跨平台。一般來說`make`在Unix-like的作業系統中才能使用，像是Linux。假如想在Windows中使用`make`，要嘛使用WSL要嘛使用msys2，使用上會比較麻煩。
@@ -231,7 +231,7 @@ make CFLAGS+=-g
 從上面的流程可以知道，`cmake`不會直接建置專案，而是先產生建置工具所需的設定檔，然後使用那些設定檔透過建置工具來編譯專案。`cmake`不直接編譯專案的程式碼，而是先產生建置工具所需的設定檔，主要是因為這樣可以支援多種建置工具來編譯專案。在Linux中`cmake`就產生`makefile`，然後使用`make`來編譯專案。在Windows上，`cmake`就產生提供給`Visual Studio`所需的檔案，讓`Visual Studio`來編譯專案。在Mac OS上，`cmake`就產生`xcode`所需的檔案，讓`xcode`來編譯專案。這樣就能達成跨平台的支援。
 
 #### example_02
-接下來用範例來簡單說明怎麼使用`cmake`。這裡直接拿`example01`改來用，請先把前一個範例`example01`複製一份，並且命名為`example_02`。因為我們接下來要使用`cmake`建置專案，所以請先把`makefile`刪除掉，然後新增檔案`CMakeLists.txt`，該檔案的內容如下：
+接下來用範例來簡單說明怎麼使用`cmake`。這裡直接拿`exmaple_01`改來用，請先把前一個範例`exmaple_01`複製一份，並且命名為`example_02`。因為我們接下來要使用`cmake`建置專案，所以請先把`makefile`刪除掉，然後新增檔案`CMakeLists.txt`，該檔案的內容如下：
 ```cmake
 cmake_minimum_required(VERSION 3.0)
 
