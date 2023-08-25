@@ -32,7 +32,7 @@ gcc main.c -o hello
 使用`make`建置的好處是，在編譯的過程中會根據`makefile`的規則檢查哪些檔案已經修改過且需要再編譯一次，又有哪些檔案沒更動過且不需要再編一次。這對於大型專案來說，可以節省不少編譯的時間，因為只要曾編譯過一次，`make`就只會針對更改過的檔案或新增的檔案編譯，不需要對專案中所有的檔案重新編譯。
 
 #### example01
-接下來用範例來簡單說明怎麼使用`make`來建置一個專案。這邊建議是照著下面的流程玩過一遍會比較好，假如懶得做一遍，可以直接用[example01](./example01/README.md)。
+接下來用範例來簡單說明怎麼使用`make`來建置一個專案。這邊建議是照著下面的流程玩過一遍會比較好，假如懶得做一遍，可以直接用[example01](./example1/README.md)。
 
 請先建一個資料夾，該資料夾的名稱可以任意使用，這邊就用`example01`來命名，後面說明比較能統一。在資料夾`example01`中再建一個資料夾，請將該資料夾命名為`src`。資料夾`src`用來放所有的source code，這包含`.c`、`.cpp`、`.h`和`.hpp`這些檔案。也因為資料夾`src`主要用來放source code，所以這個資料夾也可以稱為`Source Tree`。
 
@@ -220,3 +220,43 @@ make CFLAGS+=-g
 ```
 等編譯完成，可執行檔`myPow`會因為包含一些除錯用的資訊，檔案可能會比較大，但是我們也可以使用`gdb`除錯。
 ![example01_make_debug](./images/example01_make_debug.png)
+
+### 使用cmake建置
+前面介紹了怎麼使用`make`建置一個專案，不管專案中有多大，只要`makefile`的編譯規則寫好，都能很輕易建置專案，而且在建置的過程中只會對有更新過的檔案編譯，所以可以節省很多時間。有這麼好用的工具可以使用，為什麼還要使用`cmake`呢？那是因為`make`這個工具沒有跨平台。一般來說`make`在Unix-like的作業系統中才能使用，像是Linux。假如想在Windows中使用`make`，要嘛使用WSL要嘛使用msys2，使用上會比較麻煩。
+
+`cmake`的優勢在於支援跨平台。假設我們在開發一個用專案，在這個專案中沒有使用到只支援特定作業系統的函式庫，像是使用到Linux的`fork()`，那麼就可以在Linux和Windows上建置這個專案。雖說`cmake`的確是一個用於建置專案的工具，但是使用上又跟`make`有點不同。當我們為一個專案編輯好`CMakeLists.txt`以後，透過`cmake`建置該專案的流程如下:
+1. 先在該專案中建立一個用於建置的資料夾
+2. 使用`cmake`產生建置工具所需的設定檔
+3. 透過`cmake`所產生的檔案，使用建置工具來編譯專案中的原始碼
+從上面的流程可以知道，`cmake`不會直接建置專案，而是先產生建置工具所需的設定檔，然後使用那些設定檔透過建置工具來編譯專案。`cmake`不直接編譯專案的程式碼，而是先產生建置工具所需的設定檔，主要是因為這樣可以支援多種建置工具來編譯專案。在Linux中`cmake`就產生`makefile`，然後使用`make`來編譯專案。在Windows上，`cmake`就產生提供給`Visual Studio`所需的檔案，讓`Visual Studio`來編譯專案。在Mac OS上，`cmake`就產生`xcode`所需的檔案，讓`xcode`來編譯專案。這樣就能達成跨平台的支援。
+
+#### example_02
+接下來用範例來簡單說明怎麼使用`cmake`。這裡直接拿`example01`改來用，請先把前一個範例`example01`複製一份，並且命名為`example_02`。因為我們接下來要使用`cmake`建置專案，所以請先把`makefile`刪除掉，然後新增檔案`CMakeLists.txt`，該檔案的內容如下：
+```cmake
+cmake_minimum_required(VERSION 3.0)
+
+project(example02)
+
+include_directories(src)
+
+add_executable(myPow src/main.c src/calcPow.c)
+```
+就只是把專案`example_02`編譯成可執行檔`myPow`，假如不把空行算進去，只需要短短的4行就能做完。現在來說明每一行的意義:
+* `cmake_minimum_required()`: 這行的用意是指定能使用的`cmake`最低版本。其實沒這行也可以使用，只是如果`CMakeLists.txt`有用到的指令只有在比較舊的版本才能使用，少這一行可能無法建置。
+* `project()`: 這行是用來指定專案的名稱，雖然不使用不會怎麼樣，但建議使用會比較好。
+* `include_directories()`: 因為標頭檔`calcPow.h`放在目錄`src`中，所以才需要這一行，告訴`cmake`這個專案的`.c`檔中所使用的標頭檔放置的路徑在哪裡。
+* `add_executable()`: 這一行是關鍵，它會把在目錄`src`中的`main.c`與`calcPow.c`編譯成可執行檔`myPow`。
+
+現在來說明怎麼使用`cmake`建置，可以先把目錄`build`中的檔案都刪掉。開啟終端機，然後使用移動到`build`中，接著使用下面的指令:
+```sh
+cmake ..
+```
+`cmake`這個指令後面必須給予一個參數，用來指定`CMakeLists.txt`所在位置，由於當前目錄在`build`中，而`CMakeLists.tx`在上一層的目錄中，所以`cmake`後面接的參數是`..`。執行結果如下圖所示。
+![example_02_cmake](./images/example_02_cmake.png)
+
+到這邊還只是第一步，`cmake`才剛產生出`makefile`。現在使用下面的指令，透過`make`來編譯專案:
+```sh
+make
+```
+如下圖所示為執行的過程，由`cmake`產生的`makefile`非常貼心，編譯的過程中還會顯示處理的進度。
+![example_02_make](./images/example_02_make.png)
