@@ -119,3 +119,36 @@ message("====================================================")
 遇到這種狀況，最好的做法是讓`cmake`自動搜尋所有的`.c`和`.cpp`檔，然後使用這些檔案來建置專案。這麼做不僅可以避免不小心打錯字，而且不管在專案中新增或移除多少個Source code，我們只需要稍微修改`CMakeLists.txt`，就能夠建置專案。
 
 `aux_source_directory()`這個指令在前面提到的情境中非常好用。這個指令的功能是給定一個資料夾的路徑，會找出該資料夾中所有的`.c`和`cpp`檔，然後儲存進一個變數中。
+
+現在就用範例來說明怎麼使用`aux_source_directory()`，請先建立出一個目錄`example_04`作為這次範例的專案名稱，然後在該目錄底下再建一個資料夾`src`。在資料夾`src`中放置這三個檔案:`main.c`、`calcPow.h`和`calcPow.h`，這三個檔案的內容與範例`example_02`的相同，所以也可以直接從範例`example_02`直接複製過來。
+
+接下來說明`CMakeLists.txt`的內容，該檔案的內容如下:
+```cmake
+cmake_minimum_required(VERSION 3.5)
+project(example02)
+include_directories(src)
+
+aux_source_directory(src SRCS)
+add_executable(myPow ${SRCS})
+```
+前三行指令的用途還是在解釋一次:
+* `cmake_minimum_required()`: 用來設定可以接受的`cmake`最低版本。
+* `project()`: 用來設定專案的名稱。
+* `include_directories()`: 由於目錄`src`中存在標頭檔，所以需要使用這個指令來設定`cmake`該從哪裡尋找標頭檔的位置。
+
+在`CMakeLists.txt`中最後兩行才是重點:
+* `aux_source_directory()`: 在這個指令中先給第一個參數`src`用來指定Source code所在之路徑，然後這個指令會把目錄`src`中所有的`.c`檔都找出來並且儲存在變數`SRCS`中。
+* `add_executable()`: 在這個指令中可以發現原本`myPow`後面要列出所有`.c`檔，但現在使用`aux_source_directory()`自動搜尋在目錄`src`中的`.c`檔，然後我們可以把`${SRCS}`塞到`add_executable()`後面，因為`SRCS`這個變數就代表所有的`.c`檔。
+
+現在我們有了`CMakeLists.txt`，接下來試試看建置專案。請先使用下面的指令建立目錄`build`，然後進入該目錄中:
+```sh
+mkdir build
+cd build
+```
+然後我們需要使用下面的指令來建置專案:
+```sh
+cmake ..
+make
+```
+
+這次我們修改`CMakeLists.txt`，我們使用`aux_source_directory()`來自動搜尋在目錄`src`中所有的`.c`檔，而且我們有同樣可以建置專案。
