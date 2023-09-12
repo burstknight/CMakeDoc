@@ -415,3 +415,80 @@ make
 ```
 
 這次我們修改`CMakeLists.txt`，我們使用`aux_source_directory()`來自動搜尋在目錄`src`中所有的`.c`檔，而且我們有同樣可以建置專案。
+
+----
+
+## if條件判斷
+在`CMakeLists.txt`中也可以像`C/C++`一樣使用if條件判斷，根據建置的一些設定來做些複雜的事情。在`cmake`中if條件判斷的語法如下:
+```cmake
+if(<condition>)
+    <command>
+endif()
+```
+用法跟`C/C++`類似，在`if()`中給予判斷式子，也就是`<condition`。而`<command>`就是在條件判斷成立，所執行的指令。基本上`if()`後面必須接上`endif()`，`cmake`在執行時才會知道`if`條件判斷的區塊範圍在哪裡。
+
+現在就用範例來簡單說明怎麼使用`if()`。請先建立一個資料夾`example_05`，然後在這個資料夾中見出檔案`CMakeLists.txt`，該檔案的內容如下:
+```cmake
+cmake_minimum_required(VERSION 3.0)
+project(example_05)
+
+if(WIN32)
+	message(STATUS "OS is windows.")
+else()
+	message(STATUS "OS is not windows.")
+endif()
+```
+    在這個範例中就不解是第一行和第二行，重點在第四行後面的條件判斷。這邊先說明一下，在這個範例中有使用到變數`WIN32`，這個變數是`cmake`預先定義好的，可以用來判斷當前建置的環境是不是windows。現在來說明在這個範例中的條件判斷，可以看到這邊只有兩個結果:
+1. 假如建置的環境是windows，則變數`WIN32`的值會是`true`，所以執行指令`message(STATUS "OS is windows.")`。
+2. 假如建置環境不是windows，則變數`WIN32`的值會是`false`，所以執行指令`message(STATUS "OS is not windows.")`。
+
+有時候我們在`C/C++`中需要處理不只一個條件，這個時候就會需要使用`if-else-if`這種條件判斷。`cmake`也有提供這種條件判斷，語法如下:
+```cmake
+if(<condition 01>)
+    <command>
+elseif(<condition 02>)
+    <command>
+else()
+    <command>
+endif()
+```
+這邊的重點是如果需要追加新的條件判斷，就把`elseif()`加到`if()`後面。假如有需要的話，才在最後面加上`else()`。
+
+### 比較運算子
+現在就來好好說明比較運算子，這部分跟`C/C++`的比較運算子的用法類似，可以把兩個變數的值拿來比較。可是跟`C/C++`不同，在`cmake`中比較運算子都是英文單字來表示，而且還有一點需要注意，這些**比較運算子必須要大寫**。
+
+下面的表格是`C/C++`與`cmake`的比較運算子的對應表:
+`cmake`比較運算子   | `C/C++`比較運算子
+--------------------|---------------------------
+`LESS`              | `<`
+`GREATER`           | `>`
+`EQUAL`             | `==`
+`NOT`               | `!`
+`AND`               | `&&`
+`OR`                | `\|\|`
+`LESS_EQUAL`        | `<=`
+`GREATER_EQUAL`     | `>=`
+
+這裡要提醒一下，`cmake`要安裝到`3.7`版以後才能使用`LESS_EQUAL`和`GREATER_EQUAL`，`CMakeLists.txt`也需要使用`cmake_minimum_required(VERSION 3.7)`才行。假如不想安裝那麼新的`cmake`，就需要使用複合的條件判斷才能達成，這部分請看下面的範例。
+
+接下來用範例來說明。請先建一個資料夾`example_06`，然後在這個資料夾中新增檔案`CMakeLists.txt`，該檔案的內容如下:
+```cmake
+cmake_minimum_required(VERSION 3.5)
+project(example_06)
+
+set(var 4)
+if(${var} GREATER 4)
+	message("var: ${var} > 4")
+elseif(${var} GREATER 3 OR ${var} EQUAL 3)
+	message("var: ${var} >= 3")
+else()
+	message("var: ${var} < 3")
+endif()
+```
+在`CMakeLists.txt`的第一和第二行就不解釋了，這邊的重點是`set(var 4)`這一行後面。在這個範例中，有一組條件判斷，根據變數`var`的值決定要印出什麼樣的資訊:
+* 假如變數`var`大於4，就執行`message("var: ${var} > 4")`。
+* 假如變數`var`大於等於3，就執行`message("var: ${var} >= 3")`。
+* 假如變數`var`小於3，就執行`message("var: ${var} < 3")`。
+由於變數`var`的值為`4`，只有第二個條件判斷成立，所以會執行第二個條件判斷底下的指令。
+
+可以在範例`example_06`中發現，如果我們希望有`GREATER_EQUAL`這個比較，我們可以透過`OR`把大於`GREATER`和相等`EQUAL`這兩個條件判斷結合起來達到相同的效果。
