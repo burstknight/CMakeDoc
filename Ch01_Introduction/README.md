@@ -557,3 +557,60 @@ endforeach(j RANGE -1 9 3)
 也就是說這個範例會從`-1`開始，每次跌代顯示訊息以後會加`3`，直到變數`j`為`9`時顯示最後一次資訊就停止。
 
 可以這麼說，前面提到的`foreach()`的第一種使用方式其實是第二種使用方式的特例，只是起始值和步階預設值分別為`0`和`1`。
+
+第三種方法是產生一個序列，在這個序列中放入想處理的資料，`foreach()`就會在每一次跌代時，依序從這個序列中拿出一個元素來處理。
+
+產生序列又有兩種做法，這邊先從第一種作法來說明。`cmake`有提供一個指令`list()`，這個指令的功能是只要給定多個元素，就會把這些元素放進一個變數中，用法如下:
+```cmake
+list(APPEND <var> <element_01> <element_02> ... <element_N>)
+```
+`list()`有很多使用方式，這邊只介紹透過這個指令產生序列。這裡列出幾個使用時的需要注意的重點:
+* `APPEND`: 這個是用來要求`list()`將一組元素放進一個序列中，假如這個序列的變數不存在，就直接宣告出一個變數來。
+* `<var>`: 用來指定想處理的變數名稱。
+* `<element_01> <element_02> ... <element_N>`: 用來給予想加進序列的元素。要記得一點，每個元素之間必須用空格隔開。
+
+接下來說明怎麼使用`foreach()`處理序列，使用方式如下:
+```cmake
+foreach(<iter_var> IN LISTS <list_var>)
+    <commad>
+endforeach()
+```
+這邊也列出幾個使用上需要注意的重點:
+* `IN LISTS`: 在`foreach()`中必須加上兩個單字，這可以告訴`cmake`這一組迴圈中需要從給定的序列中取出每一個元素來使用。
+* `<iter_var>`: 每一次跌代時都會把元素放進這個變數中。
+* `<list_var>`: 這個是用來給予想處理的序列變數。
+
+現在我們用一個簡單的小範例來說明，請先在`CMakeLists.txt`後面新增以下內容:
+```cmake
+list(APPEND l "Dog" "Bird" "Cat")
+foreach(e IN LISTS l)
+	message("Element: ${e}")
+endforeach()
+```
+
+接下來分析這個小範例:
+1. 先建立一個序列`l`，在這個序列中包含3個字串。
+2. `foreach()`會在每一次跌代從序列`l`依序取出字串來，然後印出來。
+
+最後來說明另一種使用`foreach()`處理序列。有時候我們可能不想要建一個序列，只想從現有的變數組合起來使用，這個時候就可以使用這種使用方式，使用方式如下:
+```cmake
+foreach(<iter_var> IN LIST <var_01> <var_02> ... <var_N>)
+    <commad>
+endforeach()
+```
+這個使用方式跟前面提到的不同之處在於`IN LISTS`後面直接給予變數，假如有多個變數，每個變數之間都要用空格隔開。
+
+請在範例`example_07`的`CMakeLists.txt`後面新增以下內容:
+```cmake
+set(A "C")
+set(B "C++")
+set(C "Python")
+set(D "Java")
+foreach(e IN LISTS A B C D)
+	message("Language: ${e}")
+endforeach(e IN LISTS A B C D)
+```
+
+這邊也分析一下這個範例:
+* 在`foreach()`前面先使用`set()`宣告四個變數。
+* `foreach()`中的`IN LISTS`後面放入這四個變數，組成一個暫時的序列。每一次跌代時會從這個暫時的序列中取出元素，然後放入變數`e`中，並且將該變數的值印出來。
