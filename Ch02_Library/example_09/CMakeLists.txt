@@ -4,15 +4,14 @@ project(example_09)
 
 set(CMAKE_C_STANDARD 99)
 
+# 新增一個建置的設定，可選擇是否要使用`ColorPrint`這個函式庫
+option(USE_COLOR_PRINT "Use color print lib" ON)
+
 # 用來處理建置的設定標頭檔
 configure_file(
 	"${PROJECT_SOURCE_DIR}/config.h.in"
 	"${PROJECT_SOURCE_DIR}/config.h"
 	)
-
-
-# 新增一個建置的設定，可選擇是否要使用`ColorPrint`這個函式庫
-option(USE_COLOR_PRINT "Use color print lib" ON)
 
 if(USE_COLOR_PRINT)
 	include_directories("${PROJECT_SOURCE_DIR}/ColorPrint")

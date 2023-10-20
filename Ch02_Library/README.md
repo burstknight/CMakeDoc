@@ -217,3 +217,77 @@ option(<var> <message> [<value>])
 * `<var>`: 可以用來指定變數名稱。
 * `<message>`: 可以給予提示文字，方便讓使用者了解這個編譯選項的用意。
 * `[<value>]`: 用來指定預設值，可以是`ON`或是`OFF`。假如沒有給，預設會是`OFF`。
+
+### 範例說明
+現在用範例來說明怎麼使用`configure_file()`和`option()`這兩個指令。請先建立一個新的資料夾，該資料夾的名稱為`example_09`。其實這個範例是從前一個範例`example_08`去更改，也可以直接把`example_08`複製過來使用。接下來要說明的範例主要的目標是，透過在`CMakeLists.txt`新增編譯選項，來決定`main.c`是要使用我們自己寫的函式庫`ColorPrint`，還是使用`stdio.h`的`printf()`。
+
+請先在資料夾`example_09`中新增檔案`main.c`，內容如下:
+```c
+#include "config.h"
+#ifdef USE_COLOR_PRINT
+	#include "./ColorPrint/myPrint.h"
+#else
+	#include <stdio.h>
+#endif
+
+int main(){
+#ifdef USE_COLOR_PRINT
+	showMessage(Info, "Hello world!\n");
+	showMessage(Error, "Error message!\n");
+#else
+	printf("Hello world!\n");
+	printf("Error message!\n");
+#endif
+
+	return 0;
+} // End of main
+```
+
+與範例`example_08`不同之處有:
+* 第一行多了`#include "config.h"`，而且需要注意一點，我們不需要新增`config.h`這個標頭檔，因為之後會透過`cmake`幫我們產生。
+* 在函數`main()`前面使用條件編譯與巨集`USE_COLOR_PRINT`，根據我們是否需要使用我們自己寫的函式庫`ColorPrint`與否，來決定要使用哪一個標頭檔。
+* 在函數`main()`裡面也同樣使用條件編譯和巨集`USE_COLOR_PRINT`，來決定是否要使用我們自己寫的函式庫。
+
+接下來請新增檔案`CMakeLists.txt`，該檔案的內容如下:
+```cmake
+cmake_minimum_required(VERSION 3.5)
+
+project(example_09)
+
+set(CMAKE_C_STANDARD 99)
+
+# 新增一個建置的設定，可選擇是否要使用`ColorPrint`這個函式庫
+option(USE_COLOR_PRINT "Use color print lib" ON)
+
+# 用來處理建置的設定標頭檔
+configure_file(
+	"${PROJECT_SOURCE_DIR}/config.h.in"
+	"${PROJECT_SOURCE_DIR}/config.h"
+	)
+
+# 透過`if()`決定是否要使用`ColorPrint`
+if(USE_COLOR_PRINT)
+	include_directories("${PROJECT_SOURCE_DIR}/ColorPrint")
+	add_subdirectory(ColorPrint)
+	set(Extra_Libs ${Extra_Libs} ColorPrint)
+endif(USE_COLOR_PRINT)
+
+aux_source_directory(. Src)
+add_executable(myPrint ${Src})
+target_link_libraries(myPrint ${Extra_Libs})
+```
+
+這裡有幾個重點:
+* `option(USE_COLOR_PRINT "USE_COLOR_PRINT" ON)`: 新增編譯選項，所以我們可以使用`if()`根據編譯選項`USE_COLOR_PRINT`是否開啟，做不同的事情:
+	* 假如`USE_COLOR_PRINT`為`ON`: 就編譯函式庫`ColorPrint`，然後使用`set()`這個指令宣告變數`Extra_Libs`，方便我們在編譯最終的可執行檔時，可以幫函式庫連結進來。
+	* 假如`USE_COLOR_PRINT`為`OFF`: 不會編譯函式庫`ColorPrint`，而且最終的可執行檔`myPrint`就直接使用`stdio.h`的`printf()`。
+* `configure_file()`: 我們透過`configure_file()`要求`cmake`讀取`config.h.in`，產生標頭檔`config.h`，並且根據編譯選項`USE_COLOR_PRINT`來決定該標頭檔是否需要宣告巨集`USE_COLOR_PRINT`。
+
+現在就新增檔案`config.h.in`，該檔案的內容如下:
+```c
+#cmakedefine USE_COLOR_PRINT
+```
+
+這邊透過由`cmake`提供的`#cmakedefine`宣告巨集`USE_COLOR_PRINT`。
+
+至於`ColorPrint`這個資料夾，因為在這個範例中主要是透過新增編譯選項，讓`main.c`決定是否要使用`ColorPrint`的函式，所以該資料夾的檔案內容與範例`example_08`沒有什麼不同。因此，這邊就不另外贅述了。
