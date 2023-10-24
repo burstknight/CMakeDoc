@@ -181,8 +181,8 @@ add_library(ColorPrint ${Lib_Src})
 1. 先在專案中建立一個檔案`config.h.in`，並且在這個檔案中。
 2. 編輯專案中需要使用`config.h`這個標頭檔的所有檔案，透過`#ifdef`、`#ifndef`等巨集來條件編譯。
 3. 編輯`CMakeLists.txt`:
-    1. 透過指令`configure_file()`產生`config.h`。
-    2. 使用指令`option()`新增編譯選項。
+    1. 使用指令`option()`新增編譯選項。
+    2. 透過指令`configure_file()`產生`config.h`。
     3. 使用`if()`來做相對應的條件判斷。
 
 ### 產生設定標頭檔: `configure_file()`
@@ -291,3 +291,55 @@ target_link_libraries(myPrint ${Extra_Libs})
 這邊透過由`cmake`提供的`#cmakedefine`宣告巨集`USE_COLOR_PRINT`。
 
 至於`ColorPrint`這個資料夾，因為在這個範例中主要是透過新增編譯選項，讓`main.c`決定是否要使用`ColorPrint`的函式，所以該資料夾的檔案內容與範例`example_08`沒有什麼不同。因此，這邊就不另外贅述了。
+
+現在請先使用下面的指令建立出資料夾`build`，並且在該資料夾中建置範例`example_009`:
+```bash
+$ mkdir build
+$ cd build
+$ cmake ..
+$ make
+```
+
+當我們使用`cmake ..`這個指令時，會在資料夾`build`中產生出`makefile`和編譯時所需的檔案。此外，因為我們在`CMakeLists.txt`中使用到`configure_file()`，所以我們可以看到該範例中會多出`config.h`這個標頭檔。由於我們使用的指令`option()`新增的編譯選項`USE_COLOR_PRINT`，預設值為`ON`，所以`config.h`的內容為:
+```c
+#define USE_COLOR_PRINT
+```
+
+因為`USE_COLOR_PRINT`為`ON`，標頭檔`config.h`就宣告出同名的巨集，所以`main.c`就會使用函式庫`ColorPrint`。當我們在資料夾`build`中使用`make`這個指令編譯時，就會發現最終編譯出來的可執行檔確實會使用函式庫`ColorPrint`印出有顏色的文字。
+
+假如我們不想開啟`USE_COLOR_PRINT`使用函式庫`ColorPrint`，該怎麼做才好呢?有兩個做法可以使用:
+1. 先使用`cmake`產生編譯需要的檔案，然後使用`ccmake`關閉`USE_COLOR_PRINT`。
+2. 使用`cmake`產生`makefile`的時候給予參數，關閉`USE_COLOR_PRINT`。
+
+這兩種使用方式都可以關閉`USE_COLOR_PRINT`，差別在於使用情境。如果一個專案中已經先使用`cmake ..`在`build`資料夾中產生編譯所需的檔案，就會使用第一種作法。假如專案中還沒使用`cmake`產生編譯所需的檔案，就可以使用第二種作法。
+
+既然已經在`build`中透過`cmake ..`產生`makefile`，我們先試試使用第一種作法。`ccmake`是一個文字介面的工具，我們可以在終端機中透過這個工具調整編譯的選項，但是要注意一點，必須先使用`cmake`這個指令產生出編譯所需的檔案，才能夠使用`ccmake`。現在請先在終端機中透過指令`cd`切換工作目錄到`build`中，然後使用下面的指令:
+```bash
+$ ccmake ..
+```
+
+由於我們的當前工作目錄是`build`，而`CMakeLists.txt`在上一層的目錄中，所以我們需要在`ccmake`後面加上參數`..`，`ccmcake`才能夠取得編譯選項提供給我們調整。當我們使用`ccmake ..`時，會看到終端機出現一個使用者介面。在這個使用這介面中可以使用方向鍵的上下鍵或是`j`和`k`來移動游標，並且可以在想更改的選項上按下`Enter`鍵來修改。
+
+現在請用方向鍵或`j`和`k`移動游標到`USE_COLOR_PRINT`，並且按下`Enter`鍵。這個時候會發現`USE_COLOR_PRINT`原本是`ON`，更改後會變成`OFF`。接下來請按`c`鍵，這個時候`ccmake`就會根據當前的設定重新建置一次，然後按`q`鍵離開。
+
+如果我們去看`config.h`，就會發現這個標頭檔的內容更改了:
+```c
+/* #undef USE_COLOR_PRINT */
+```
+
+可以看到`config.h`沒有宣告巨集`USE_COLOR_PRINT`，這是因為我們透過`ccmake`關掉`USE_COLOR_PRINT`並且重新建置一次。假如我們編譯一次程式碼，也會發現最終編譯出的可執行檔也同樣不使用`ColorPrint`，而是使用`stddio.h`的`printf()`。
+
+現在我們來試試第二種方法，請先確認當前的工作目錄是`build`，然後使用下面的指令清除`build`中所有的檔案:
+```bash
+$ rm -rf *
+```
+
+接下來請使用下面的指令在資料夾`build`中建置出編譯所需的檔案:
+```bash
+$ cmake .. -DUSE_COLOR_PRINT=OFF
+```
+
+這邊解釋一下，`cmake`這個指令後面接上參數`-DUSE_COLOR_PRINT=OFF`，可以將編譯選項`USE_COLOR_PRINT`更改成`OFF`。基本上只要在`cmake`後面加上參數`-D`，就可以更改編譯選項。
+
+我們可以看到`config.h`也同樣不會宣告巨集`USE_COLOR_PRINT`，而且編譯以後也會發現最終可執行檔也同樣不會使用`ColorPrint`。
+
