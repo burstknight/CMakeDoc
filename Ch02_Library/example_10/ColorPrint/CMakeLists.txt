@@ -1,6 +1,6 @@
 aux_source_directory(. Lib_Src)
 
-add_library(ColorPrint ${Lib_Src})
+add_library(${Lib_Name} ${Lib_Src})
 
-install(TARGETS ColorPrint DESTINATION bin)
-install(FILES myPrint.h DESTINATION include)
+install(TARGETS ColorPrint DESTINATION bin/${Lib_Name})
+install(FILES myPrint.h DESTINATION include/${Lib_Name})

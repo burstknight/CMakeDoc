@@ -11,8 +11,9 @@ configure_file(
 	)
 
 # 設定安裝路徑為`/tmp`
-set(CMAKE_INSTALL_PREFIX /tmp)
+#set(CMAKE_INSTALL_PREFIX /tmp)
 
+set(Lib_Name "ColorPrint")
 
 # 新增一個建置的設定，可選擇是否要使用`ColorPrint`這個函式庫
 option(USE_COLOR_PRINT "Use color print lib" ON)
@@ -24,12 +25,13 @@ if(USE_COLOR_PRINT)
 endif(USE_COLOR_PRINT)
 
 aux_source_directory(. Src)
-add_executable(myPrint ${Src})
-target_link_libraries(myPrint ${Extra_Libs})
+add_executable(testColorPrint ${Src})
+target_link_libraries(testColorPrint ${Extra_Libs})
 
 
-install(TARGETS myPrint DESTINATION bin)
-install(FILES "${PROJECT_SOURCE_DIR}/config.h" DESTINATION include)
+install(TARGETS testColorPrint DESTINATION bin)
+install(FILES "${PROJECT_SOURCE_DIR}/config.h" DESTINATION include/ColorPrint)
+install(FILES cmake/ColorPrintConfig.cmake DESTINATION lib/cmake/${Lib_Name})
 
 
 # 新增一個指令，可以透過 `make uninstall` 解除安裝
