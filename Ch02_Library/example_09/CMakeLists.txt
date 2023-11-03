@@ -2,23 +2,31 @@ cmake_minimum_required(VERSION 3.5)
 
 project(example_09)
 
-set(CMAKE_C_STANDARD 99)
+# 新增一個選項，可以用來控制要不要做單元測試
+option(Enable_Unit_Test "Do you want to do unit test?" ON)
 
-# 新增一個建置的設定，可選擇是否要使用`ColorPrint`這個函式庫
-option(USE_COLOR_PRINT "Use color print lib" ON)
+# 新增一個選項，可以決定是要使用標頭檔`assert.h`提供的巨集`assert()`來做單元測試，
+# 又或是單純使用執行檔`myExe`和`CTest`來做單元測試
+option(Enable_Assert_Test "Do you want to use the macro assert() to do unit test" OFF)
 
-# 用來處理建置的設定標頭檔
-configure_file(
-	"${PROJECT_SOURCE_DIR}/config.h.in"
-	"${PROJECT_SOURCE_DIR}/config.h"
-	)
+# 設定標頭檔所在的位置
+include_directories(./includes)
 
-if(USE_COLOR_PRINT)
-	include_directories("${PROJECT_SOURCE_DIR}/ColorPrint")
-	add_subdirectory(ColorPrint)
-	set(Extra_Libs ${Extra_Libs} ColorPrint)
-endif(USE_COLOR_PRINT)
+# 宣告變數`Lib_Name`為`myMathLib`，作為函數庫的名稱
+set(Lib_Name myMathLib)
 
-aux_source_directory(. Src)
-add_executable(myPrint ${Src})
-target_link_libraries(myPrint ${Extra_Libs})
+# 進入子目錄`src`中處理該子目錄的`CMakeLists.txt`
+add_subdirectory(./src)
+
+aux_source_directory(./src Source_Files)
+
+add_executable(myExe ${Source_Files})
+
+# 把函數庫`myMathLib`連結進可執行檔中
+target_link_libraries(myExe ${Lib_Name})
+
+if(${Enable_Unit_Test})
+	enable_testing()
+	add_subdirectory(./test)
+endif(${Enable_Unit_Test} EQUAL TRUE)
+

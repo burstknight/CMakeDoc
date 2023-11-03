@@ -1,3 +1,6 @@
-# Example 09
-這個範例主要說明使用`configure_file()`這個指令如何根據建置設定來產生`config.h`，藉此來根據不同的情況來條件編譯。
+# Example_09
+這個範例主要用來說明該怎麼做單元測試。在這個範例中會展示三種實現單元測試的方式:
+1. 在`CMakeLists.txt`中使用`add_test()`與`set_testproperties()`來實現
+2. 在`CMakeLists.txt`中使用`add_test()`和`set_testproperties()`，以及巨集`macro()`來實現
+3. 使用標頭檔`asser.h`和`add_test()`，來實現
 
