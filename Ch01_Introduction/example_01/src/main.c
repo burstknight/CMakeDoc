@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "calcPow.h"
+#include "myMathLib.h"
 
 int main(int argc, char** argv){
 	if (argc < 3) {

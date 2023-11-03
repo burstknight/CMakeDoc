@@ -6,4 +6,4 @@ include_directories(src)
 
 aux_source_directory(src SRCS)
 
-add_executable(myPow ${SRCS})
+add_executable(myExe ${SRCS})

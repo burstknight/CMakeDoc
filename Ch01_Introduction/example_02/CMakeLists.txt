@@ -8,4 +8,4 @@ project(example_02)
 include_directories(src)
 
 # 把所有的`.c`檔編譯成可執行檔`myExe`
-add_executable(myExe src/main.c src/calcPow.c)
+add_executable(myExe src/main.c src/myMathLib.c)
