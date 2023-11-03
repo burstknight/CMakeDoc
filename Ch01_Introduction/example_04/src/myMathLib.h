@@ -1,5 +1,5 @@
-#ifndef CALCPOW_H
-#define CALCPOW_H
+#ifndef MY_MATH_LIB_H
+#define MY_MATH_LIB_H
 
 /**
  * @brief Calculate pow.
