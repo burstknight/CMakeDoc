@@ -1,0 +1,7 @@
+get_filename_component(_dir "${CMAKE_CURRENT_LIST_DIR}" PATH)
+
+get_filename_component(_prefix "${_dir}/../.." ABSOLUTE)
+
+include("${CMAKE_CURRENT_LIST_DIR}/@Lib_Name@-targets.cmake")
+
+set(@Lib_Name@_INCLUDE_DIRS "${_prefix}/include/@Lib_Name@")

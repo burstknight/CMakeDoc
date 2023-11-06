@@ -1,0 +1,8 @@
+set(PACKAGE_VERSION "@Lib_Version@")
+if(NOT ${PACKAGE_VERSION} VERSION_GREATER "@Lib_Version@")
+	set(PACKAGE_VERSION_COMPATIBLE 1)
+	if("${PACKAGE_VERSION}" VERSION_EQUAL "@Lib_Version@")
+		set(PACKAGE_VERSION_EXACT 1)
+	endif()
+endif()
+

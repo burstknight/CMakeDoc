@@ -1,0 +1,3 @@
+#define VERSION_MAJOR @Lib_Version_Major@
+#define VERSION_MINOR @Lib_Version_Minor@
+
