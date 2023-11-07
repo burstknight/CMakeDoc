@@ -1,3 +1,4 @@
+#include "../../includes/myMathLib.h"
 
 double calcPow(double dX, int iExp){
 	double dResult = 1.0;

@@ -4,7 +4,7 @@
 ## 多目錄建置
 有時候我們開發程式時，可能會把功能相近的`.cpp`或`.c`等檔案放在同一個資料夾中，方便管理。也就是說在一個專案的根目錄中，可能會有一個或多個資料夾中包含原始碼檔，而且這些資料夾可能還包含多層的子目錄。這個時候我們不太可能只用`aux_source_directory()`這個指令去搜尋所有的原始碼檔。
 
-### 給予需要建置的子目錄: `add_subdirectory()`
+### 新增需要建置的子目錄: `add_subdirectory()`
 這個時候我們可以使用`add_subdirectory()`這個指令，用來告訴`cmake`哪一個子目錄也有`CMakeLists.txt`。在建置的過程中，`cmake`就會進入給定的子目錄中，然後使用該子目錄的`CMakeLists.txt`來產生編譯時所需的檔案。`add_subdirectory()`的使用方式如下:
 ```cmake
 add_subdirectory(<sub_directory>)
@@ -21,7 +21,7 @@ add_library(<lib_name> [mode] <source 01> <source 02> ... <source N>)
 ```
 
 這個指令有幾個參數:
-* `<lib_name>`: 用來指定函式庫的名稱，而且在`CMakeLists.txt`中還會以變數的形式表示，<F3>方便把可執行檔與函式庫連結起來。
+* `<lib_name>`: 用來指定函式庫的名稱，而且在`CMakeLists.txt`中還會以變數的形式表示，方便把可執行檔與函式庫連結起來。
 * `[mode]`: 可以選擇函式庫的種類，如果沒設定，預設會編譯成靜態函式庫。可以使用的參數值有三種:
     * `STATIC`: 會把原始碼編譯成靜態函式庫。
     * `SHARED`: 會把原始碼編譯成共享函式庫。
@@ -50,129 +50,162 @@ target_link_libraries(<target> <lib 01> <lib 02> ... <lib N>)
 * `<target>`: 這個參數用來指定想連結進來的目標檔，可以是可執行檔，也可以是函式庫。
 * `<lib 01> <lib 02> ... <lib N>`: 用來給予函式庫，讓目標檔可以連結過來，假如有多個函式庫，每一個項目都要用空格隔開。
 
+### 引入標頭檔位置: `include_directories()`
+當我們開發一個專案需要用到函式庫的時候，就需要使用這個指令告訴`cmake`，這個專案應該去哪裡找函式庫的標頭檔。這個指令的用法如下:
+```cmake
+include_directories(<include_files_directory>)
+```
+
+這個指令的參數意義如下:
+* `<include_files_directory>`: 用來表示一個目錄的路徑，這個目錄會存放一個專案需要使用的標頭檔。
+
+基本上，假如我們開發的專案需要使用的標頭檔都在該專案的資料夾中，其實可以不需要使用這個指令。如果我們開發的專案使用到第三方函式庫，比方說使用`opencv`，就需要使用這個指令。
+
 ### 範例說明
 接下來用範例來說明`add_subdirectory()`這個指令怎麼使用。在開始說明之前，先解釋這邊所使用的範例。這個範例的主要目標是，用C語言開發一個類似`printf()`的函數，但是這個函數可以印出有顏色的文字。因為這個範例是用來說明怎麼使用`add_subdirectory()`，所以不會特別說明範例的程式碼。
 
-請先建立一個資料`example_08`，然後新增檔案`main.c`，該檔案的內容如下:
+在開始說明範例之前，先說一下稍後提到的範例的一些細節。基本上這個範例是從`example_04`改過來，我們這次的目標是把`myMathLib.c`和`myMathLib.h`當做一個函式庫來使用。此外，`main.c`不屬於這個函式庫，所以在建置的時候我們應該要分兩階段來編譯程式碼:
+1. 先編譯`myMathLib.c`成一個函式庫檔`libmyMathLib.a`
+2. 把`main.c`和函式庫檔`libmyMathLib.a`編譯成一個可執行檔。
+
+現在我們就用範例說明怎麼用階段式編譯程式碼。請先建立一個資料夾`example_08`，然後在這個資料夾中建立一個目錄`includes`，這個目錄主要用來放一個專案中所有的標頭檔。請在這個目錄中新增一個標頭檔`myMathLib.h`，該檔案的內容如下:
 ```c
-#include "./ColorPrint/myPrint.h"
+#ifndef MY_MATH_LIB_H
+#define MY_MATH_LIB_H
 
-int main(){
-	showMessage(Info, "Hello world!\n");
+/**
+ * @brief Calculate pow.
+ *
+ * @param dX: Give a number to calculate the power.
+#include "../../includes/myMathLib.h"
 
-	showMessage(Error, "Error message!\n");
+double calcPow(double dX, int iExp){
+	double dResult = 1.0;
+	int i = iExp;
+
+	while (1) {
+		if (i == 0) {
+			break;
+		}else if (i > 0) {
+			dResult *= dX;
+			i--;
+		}else {
+			dResult /= dX;
+			i++;
+		} // End of if-condition
+	} // End of while-loop
+
+	return dResult;
+} // End of calcPow
+ 
+ * @param iExp: Give the exponential.
+ *
+ * @return 
+ */
+double calcPow(double dX, int iExp);
+
+#endif
+```
+
+接下來請在`example_08`中在建立一個目錄`src`，這個目錄主要用來放置一個專案中所有`.c`或`.cpp`檔。現在我們需要在`src`中再建立一個子目錄`myMathLib`，這個子目錄會放置函式庫`myMathLib`的`.c`檔，接下來請在子目錄`myMathLib`中新增檔案`myMathLib.c`，該檔案的內容如下:
+```c
+#include "../../includes/myMathLib.h"
+
+double calcPow(double dX, int iExp){
+	double dResult = 1.0;
+	int i = iExp;
+
+	while (1) {
+		if (i == 0) {
+			break;
+		}else if (i > 0) {
+			dResult *= dX;
+			i--;
+		}else {
+			dResult /= dX;
+			i++;
+		} // End of if-condition
+	} // End of while-loop
+
+	return dResult;
+} // End of calcPow
+ 
+```
+
+既然子目錄`myMathLib`已經新增`.c`檔，接下來就該編輯`CMakeLists.txt`把`myMathLib.c`編譯成函式庫檔。請在子目錄`myMathLib`中新增檔案`CMakeLists.txt`，該檔案的內容如下:
+```
+# 在當前的資料夾中找出所有的`.c`檔
+aux_source_directory(. Lib_Source_Files)
+
+# 把所有原始碼檔案編譯成static library，而且該函式庫的名稱為`myMathLib`
+add_library(${Lib_Name} ${Lib_Source_Files})
+```
+
+在這個檔案中只有兩行指令:
+1. 先透過`aux_source_directory()`把子目錄`myMathLib`中所有`.c`檔都找出來，並且儲存在變數`Lib_Source_Files`中。
+2. 使用`add_library()`把子目錄`myMathLib`中所有的`.c`檔編譯成靜態函式庫。
+
+為了讓`cmake`能夠進入子目錄`myMathLib`中編譯出靜態函式庫，我們需要在目錄`src`中新增`CMakeLists.txt`，該檔案的內容如下:
+```cmake
+# 進入子目錄`myMathLib`，處理該子目錄中的`CMakeLists.txt`
+add_subdirectory(./myMathLib)
+```
+
+這個檔案只有一行指令。我們透過`add_subdirectory()`要求`cmake`進入在目錄`src`中的子目錄`myMathLib`，處理該子目錄中的`CMakeLists.txt`，以便能把該子目錄的`.c`檔都編譯成函式庫檔。
+
+我們已經處理好編譯函式庫的部分，接下來該新增`main.c`來使用這個函式庫。請先在目錄`src`中新增檔案`main.c`，該檔案的內容如下:
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "../includes/myMathLib.h"
+
+int main(int argc, char** argv){
+	if (argc < 3) {
+		printf("Usage: %s base exponential\n\tbase\t\tGive a float number as the base.\n\texponential\tGive an integer as the exponential.\n", argv[0]);
+		exit(1);
+	} // End of if-condition
+
+	double dBase = atof(argv[1]);
+	int iExp = atoi(argv[2]);
+
+	printf("%.4f ^ %d = %.4f\n", dBase, iExp, calcPow(dBase, iExp));
+
 	return 0;
 } // End of main
 ```
 
-接下來請新增`CMakeLists.txt`，該檔案的內容如下:
+最後請在資料夾`example_08`中新增檔案`CMakeLists.txt`，該檔案的內容如下:
 ```cmake
 cmake_minimum_required(VERSION 3.5)
 
 project(example_08)
 
-# 要求編譯的過程中需要使用C99
-set(CMAKE_C_STANDARD 99)
+# 設定標頭檔所在的位置
+include_directories(./includes)
 
-# 新增子目錄`ColorPrint`，要求cmake也要進入建置程式碼
-add_subdirectory(ColorPrint)
+# 宣告變數`Lib_Name`為`myMathLib`，作為函數庫的名稱
+set(Lib_Name myMathLib)
 
-aux_source_directory(. Src)
-add_executable(myPrint ${Src})
+# 進入子目錄`src`中處理該子目錄的`CMakeLists.txt`
+add_subdirectory(./src)
 
-# 連結函式庫`ColorPrint`
-target_link_libraries(myPrint ColorPrint)
+aux_source_directory(./src Source_Files)
+
+add_executable(myExe ${Source_Files})
+
+# 把函數庫`myMathLib`連結進可執行檔中
+target_link_libraries(myExe ${Lib_Name})
 ```
 
-這邊只列出幾個重點:
-* `set(CMAKE_C_STANDARD 99)`: 這一行主要用來告訴編譯器，這個範例的程式碼會用到`C99`。
-* `add_subdirectory(ColorPrint)`: 這行告訴`cmake`有一個子目錄`ColorPrint`中也有`CMakeLists.txt`，所以在建置的過程中也要進入這個子目錄中。
-* `target_link_libraries(myPrint ColorPrint)`: 由於子目錄`ColorPrint`中的原始碼會編譯成函式庫，所以需要用到這行讓可執行檔與函式庫連結起來。
+在這個檔案中，前兩個指令就不解釋，我們就針對後面的部分列出幾個重點:
+* `include_directories(./includes)`: 這行用來指定標頭檔都放在目錄`includes`中。其實沒有這一行也可以建置，因為`myMathLib`本來就包含在這個專案裡面。
+* `set(Lib_Name myMathLib)`: 我們使用這個指令宣告變數`Lib_Name`，用來指定函式庫的名稱。
+* `add_subdirectory()`: 我們透過這個指令讓`cmake`進入目錄`src`中編譯函式庫`myMathLib`。
+* `aux_source_directory()`: 透過這個指令把目錄`src`中的`main.c`找出來，然後使用`add_executable()`編譯成可執行檔`myExe`。
+* `target_link_libraries()`: 為了讓可執行檔`myExe`可以使用函式庫`myMathLib`，我們需要使用這個指令把該函式庫連結進來。
 
-現在該處理子目錄`ColorPrint`，請先建立一個目錄`ColorPrint`，然後在這個目錄中新增一個標頭檔`myPrint.h`，內容如下:
-```c
-#ifndef MY_PRINT_H
-#define MY_PRINT_H
-
-#include <stdio.h>
-
-enum LevelMode{
-	Info = 0,
-	Warning,
-	Error
-};
-
-/**
- * @brief Like printf() but it can show color message.
- *
- * @param mode: Set the level for the message.
- * @param pcMessage: Give teh message to show on the screen.
- * @param ...
- *
- * @return Return the number of the given message.
- */
-int showMessage(enum LevelMode mode, const char* pcMessage, ...);
-
-#endif
-```
-
-接下來請在目錄`ColorPrint`中新增`myPrint.c`，該檔案的內容如下:
-```c
-#include "myPrint.h"
-#include <string.h>
-#include <stdarg.h>
-
-int print(const char* pcColor, const char* pcMessage, va_list args){
-	int iLength = 0;
-
-	iLength = fprintf(stdout, pcColor);
-
-	iLength += vfprintf(stdout, pcMessage, args);
-
-	iLength += fprintf(stdout, "\x1b[0m");
-
-	return  iLength;
-} // End of print
-
-int showMessage(enum LevelMode mode, const char* pcMessage, ...){
-	char acColor[10];
-	switch (mode) {
-		case Warning:
-			sprintf(acColor, "\x1b[33m");
-			break;
-		case  Error:
-			sprintf(acColor, "\x1b[31m");
-			break;
-		case  Info:
-		default:
-			sprintf(acColor, "\x1b[0m");
-			break;
-	} // End of switch
-
-	va_list args, args_data;
-	va_start(args, pcMessage);
-	va_copy(args_data, args);
-
-	int iLength = print(acColor, pcMessage, args);
-
-	va_end(args);
-	va_end(args_data);
-
-	return iLength;
-} // End of showMessage
-```
-
-最後請在目錄`ColorPrint`中新增`CMakeLists.txt`，該檔案的內容如下:
-```cmake
-aux_source_directory(. Lib_Src)
-
-add_library(ColorPrint ${Lib_Src})
-```
-
-這邊有幾個重點:
-* `aux_source_directory()`: 用來把目錄`ColorPrint`中所有的`.c`檔找出來，然後放進變數`Lib_Src`中。
-* `add_library()`: 這個指令會把目錄`ColorPrint`中所有的原始碼檔都編一成一個函式庫檔，而且該函式庫的名稱為`ColorPrint`。
-
+這邊稍微解釋一下，為什麼`add_executable()`不是寫在目錄`src`中的`CMakeLists.txt`中，而是寫在根目錄的`CMakeLists.txt`中。當我們把`add_executable()`放在目錄`src`中的`CMakeLists.txt`，就會發現可執行檔編譯完以後，會放在`build`資料夾中的目錄`src`中。我們希望最終的可執行檔`myExe`放在資料夾`build`中，所以`add_executable()`這個指令就應該放在根目錄的`CMakeLists.txt`中。
 
 ## 使用自訂編譯選項
 有時候我們可能需要根據實際的情況調整編譯選項。比方說有一台開發用的電腦比較老舊，可能無法使用某個函式庫，這個時候就可以調整編譯選項，使用替代的函式庫，至少讓開發的城市勉強可以運作。
