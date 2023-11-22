@@ -207,172 +207,53 @@ target_link_libraries(myExe ${Lib_Name})
 
 這邊稍微解釋一下，為什麼`add_executable()`不是寫在目錄`src`中的`CMakeLists.txt`中，而是寫在根目錄的`CMakeLists.txt`中。當我們把`add_executable()`放在目錄`src`中的`CMakeLists.txt`，就會發現可執行檔編譯完以後，會放在`build`資料夾中的目錄`src`中。我們希望最終的可執行檔`myExe`放在資料夾`build`中，所以`add_executable()`這個指令就應該放在根目錄的`CMakeLists.txt`中。
 
-## 使用自訂編譯選項
-有時候我們可能需要根據實際的情況調整編譯選項。比方說有一台開發用的電腦比較老舊，可能無法使用某個函式庫，這個時候就可以調整編譯選項，使用替代的函式庫，至少讓開發的城市勉強可以運作。
+----
 
-`cmake`也有提供自訂編譯選項，這裡提供其中一種做法。這個做法大致上來說步驟如下:
-1. 先在專案中建立一個檔案`config.h.in`，並且在這個檔案中。
-2. 編輯專案中需要使用`config.h`這個標頭檔的所有檔案，透過`#ifdef`、`#ifndef`等巨集來條件編譯。
-3. 編輯`CMakeLists.txt`:
-    1. 使用指令`option()`新增編譯選項。
-    2. 透過指令`configure_file()`產生`config.h`。
-    3. 使用`if()`來做相對應的條件判斷。
+## 單元測試
+試想一個情況，我們先為一個專案開發十個類別，這十個類別會整合起來實現一個功能。我們在開發這十個類別的過程中，沒有先測試每個類別的運作是否正確，而是等到十個類別都實作完畢並且整合起來以後才測試。問題來了，我們在測試整合後的程式碼，發現程式執行結果不正確，唯一可以確定的是這十個類別中至少有一個可能有BUG，可是我們要怎麼找出哪一個類別有BUG？
 
-### 產生設定標頭檔: `configure_file()`
-`configure_file()`這個指令的主要功能是，可以根據使用者設定編譯選項來產生相對應內容的標頭檔，一個專案的程式碼就會讀取這個標頭檔，並且依據巨集是否存在來達成條件編譯。使用方式如下:
-```cmake
-configure_file(<source_config_path> <target_config_path>)
-```
+我們很有可能會花費大量的時間去檢查這十個類別，運氣好的話或許只需要幾個小時以內就找到問題點，但是運氣不好的話，說不定花個好幾天都可能找不到原因。有些BUG有可能不只一個類別有問題，甚至有些BUG還是在整合以後才會出現。這些情況都會導致解決BUG
 
-這個指令的參數定義如下:
-* `<source_config_path>`: 用來指定`config.h.in`這個檔案的所在路徑。
-* `<target_config_path>`: 用來指定產生相對應的檔案路徑。
 
-原則上參數`<source_config_path>`所指定的檔案應該也可以是別的檔名，也不一定要`config.h.in`，只是習慣上可能會比較常使用`config.h.in`。重點還是在於這個檔案必須遵守`cmake`定義的撰寫方式，建置的過程中才會產生相對應的輸出標頭檔。
+針對剛剛提到的情境，單元測試就是一個很好的解決辦法。單元測試的概念是，在完成一個專案的每一個類別或函式以後，就額外寫一個測試程式，測試看看剛完成的類別和函式是否有BUG。因為只針對單一的類別和函式測試，所以測試的範圍會比較小，只要測試失敗時，就可以很輕易找出問題出在哪裡。此外，在把多個類別和函式整合起來時，也需要寫測試程式，測試看看在整合以後是否會出現不如預期的錯誤。
 
-`config.h.in`這類的檔案都會以`.h.in`當副檔名，一般都會使用以下的方式定義巨集:
+有很多種方式可以做單元測試，比方說使用別人寫好的框架去寫測試程式，像是[google test](https://github.com/google/googletest)。這邊介紹一個更簡單的做法，那就是使用`ctest`來幫我們測試程式碼是否寫正確。如果真要說的話，`cmake`算一個專門用來建置專案的整合軟體，它除了包含我們一直都在使用的工具`cmake`以外，還有其他用來輔助我們開發專案的工具，`ctest`就是其中一個工具。
+
+在介紹怎麼使用`ctesst`做單元測試以前，先說明`ctesst`是如何做到單元測試。假設我們有一個程式，下面是這個程式碼的原始碼:
 ```c
-#cmakedefine <macro_var> ...
-```
+#include <stdio.h>
 
-這裡有幾個重點:
-* `#cmakedefine`: 這是`cmake`定義的巨集，功能上類似於C語言的`#define`，可以拿來宣告巨集。
-* `<macro_var>`: 用來指定巨集的名稱。
-* `...`: 這個意思是如果有需要可以給予一個值，類似於`#define VAR 0`，當然也可以不給值。
+int main(int argc, char** argv){
+	if(argc < 2){
+		printf("Error: Useage: %s <your_name>\n", argv[0]);
+		return 1;
+	} // End of if-condition
 
-### 定義編譯選項: `option()`
-接下來介紹一下`option()`，這個指令的功能是定義出一個編譯選項，並且使用變數來儲存該編譯選項，其值會是一個布林值。使用方式如下：
-```cmake
-option(<var> <message> [<value>])
-```
-
-這個指令的參數意義如下:
-* `<var>`: 可以用來指定變數名稱。
-* `<message>`: 可以給予提示文字，方便讓使用者了解這個編譯選項的用意。
-* `[<value>]`: 用來指定預設值，可以是`ON`或是`OFF`。假如沒有給，預設會是`OFF`。
-
-### 範例說明
-現在用範例來說明怎麼使用`configure_file()`和`option()`這兩個指令。請先建立一個新的資料夾，該資料夾的名稱為`example_09`。其實這個範例是從前一個範例`example_08`去更改，也可以直接把`example_08`複製過來使用。接下來要說明的範例主要的目標是，透過在`CMakeLists.txt`新增編譯選項，來決定`main.c`是要使用我們自己寫的函式庫`ColorPrint`，還是使用`stdio.h`的`printf()`。
-
-請先在資料夾`example_09`中新增檔案`main.c`，內容如下:
-```c
-#include "config.h"
-#ifdef USE_COLOR_PRINT
-	#include "./ColorPrint/myPrint.h"
-#else
-	#include <stdio.h>
-#endif
-
-int main(){
-#ifdef USE_COLOR_PRINT
-	showMessage(Info, "Hello world!\n");
-	showMessage(Error, "Error message!\n");
-#else
-	printf("Hello world!\n");
-	printf("Error message!\n");
-#endif
+	printf("Hello, %s!\n, argv[1]);
 
 	return 0;
 } // End of main
 ```
 
-與範例`example_08`不同之處有:
-* 第一行多了`#include "config.h"`，而且需要注意一點，我們不需要新增`config.h`這個標頭檔，因為之後會透過`cmake`幫我們產生。
-* 在函數`main()`前面使用條件編譯與巨集`USE_COLOR_PRINT`，根據我們是否需要使用我們自己寫的函式庫`ColorPrint`與否，來決定要使用哪一個標頭檔。
-* 在函數`main()`裡面也同樣使用條件編譯和巨集`USE_COLOR_PRINT`，來決定是否要使用我們自己寫的函式庫。
-
-接下來請新增檔案`CMakeLists.txt`，該檔案的內容如下:
-```cmake
-cmake_minimum_required(VERSION 3.5)
-
-project(example_09)
-
-set(CMAKE_C_STANDARD 99)
-
-# 新增一個建置的設定，可選擇是否要使用`ColorPrint`這個函式庫
-option(USE_COLOR_PRINT "Use color print lib" ON)
-
-# 用來處理建置的設定標頭檔
-configure_file(
-	"${PROJECT_SOURCE_DIR}/config.h.in"
-	"${PROJECT_SOURCE_DIR}/config.h"
-	)
-
-# 透過`if()`決定是否要使用`ColorPrint`
-if(USE_COLOR_PRINT)
-	include_directories("${PROJECT_SOURCE_DIR}/ColorPrint")
-	add_subdirectory(ColorPrint)
-	set(Extra_Libs ${Extra_Libs} ColorPrint)
-endif(USE_COLOR_PRINT)
-
-aux_source_directory(. Src)
-add_executable(myPrint ${Src})
-target_link_libraries(myPrint ${Extra_Libs})
+這個程式的功能為，下指令時順便傳入一個參數當作使用者名稱，然後印出文字。假設這個程式碼檔名是`main.c`，我們可以使用下面的指令編譯成可執行檔`hello`:
+```sh
+$ gcc main.c -o hello
 ```
 
-這裡有幾個重點:
-* `option(USE_COLOR_PRINT "USE_COLOR_PRINT" ON)`: 新增編譯選項，所以我們可以使用`if()`根據編譯選項`USE_COLOR_PRINT`是否開啟，做不同的事情:
-	* 假如`USE_COLOR_PRINT`為`ON`: 就編譯函式庫`ColorPrint`，然後使用`set()`這個指令宣告變數`Extra_Libs`，方便我們在編譯最終的可執行檔時，可以幫函式庫連結進來。
-	* 假如`USE_COLOR_PRINT`為`OFF`: 不會編譯函式庫`ColorPrint`，而且最終的可執行檔`myPrint`就直接使用`stdio.h`的`printf()`。
-* `configure_file()`: 我們透過`configure_file()`要求`cmake`讀取`config.h.in`，產生標頭檔`config.h`，並且根據編譯選項`USE_COLOR_PRINT`來決定該標頭檔是否需要宣告巨集`USE_COLOR_PRINT`。
+這個時候會發現當前目錄中會多出檔案`hello`，這個檔案就是剛剛編譯出來的可執行檔。當我們使用這個可執行檔時，會有兩種情況:
+* 程式執行成功，並且印出文字。
+* 程式執行失敗，然後印出錯誤訊息。
 
-現在就新增檔案`config.h.in`，該檔案的內容如下:
-```c
-#cmakedefine USE_COLOR_PRINT
-```
+我們先從執行成功開始說明。當我們使用指令`./hello Bob`時，程式會這樣運作:
+1. 函式`main()`會把指令`./hello Bob`當成字串並且用空格切成`./hello`與`Bob`這兩個字串，然後以字串陣列的方式來儲存到參數`argv`中。
+2. 因為參數`argv`有兩個字串，所以參數`argc`會是`2`。因此，程式不會執行`if`裡面的指令，而是執行`printf("Hello, %s!", argv);`，然後我們就會在終端機上看到`Hello, Bob!`這段文字。
+3. 最後執行`return 0;`這個指令，回傳0。
 
-這邊透過由`cmake`提供的`#cmakedefine`宣告巨集`USE_COLOR_PRINT`。
+接著，我們來分析當程式執行失敗時會怎麼運作。當我們使用指令`./hello`時，程式會這樣運作:
+1. 函式`main()`會把指令`./hello`當成字串處理，由於這個字串沒有任何空格，所以無法切割成多個字串，只能直接當成一個只有一個元素的字串陣列儲存進參數`argv`中。
+2. 由於參數`argv`只有一個元素`./hello`，所以參數`argc`會是`1`。因此，程式會執行`if`裡面的指令，也就是執行`printf(Error: Usage: %s <your_name>\n, argv[0]);`，然後我們就會在終端機上看到印出來的錯誤訊息。
+3. 最後程式會執行`return 1;`，在回傳1當回傳值以後，程式就會執行完畢。
 
-至於`ColorPrint`這個資料夾，因為在這個範例中主要是透過新增編譯選項，讓`main.c`決定是否要使用`ColorPrint`的函式，所以該資料夾的檔案內容與範例`example_08`沒有什麼不同。因此，這邊就不另外贅述了。
+我們可以從這兩種情況的運作流程中發現一個共通點，那就是不管程式執行結果是否成功，都會使用`return`回傳一個數值。習慣上程式運作成功時會回傳0，而程式運作失敗時則回傳非0的數值。在`bash`中我們可以在跑完一個程式以後使用指令`echo $?`確認該程式的回傳值。當我們先使用`./hello Bob`以後，會發現指令`echo $?`會顯示0，但是當我們使用`./hello`時會因為程式的執行結果是失敗的，所以使用指令`echo $?`則會顯示1。
 
-現在請先使用下面的指令建立出資料夾`build`，並且在該資料夾中建置範例`example_009`:
-```bash
-$ mkdir build
-$ cd build
-$ cmake ..
-$ make
-```
-
-當我們使用`cmake ..`這個指令時，會在資料夾`build`中產生出`makefile`和編譯時所需的檔案。此外，因為我們在`CMakeLists.txt`中使用到`configure_file()`，所以我們可以看到該範例中會多出`config.h`這個標頭檔。由於我們使用的指令`option()`新增的編譯選項`USE_COLOR_PRINT`，預設值為`ON`，所以`config.h`的內容為:
-```c
-#define USE_COLOR_PRINT
-```
-
-因為`USE_COLOR_PRINT`為`ON`，標頭檔`config.h`就宣告出同名的巨集，所以`main.c`就會使用函式庫`ColorPrint`。當我們在資料夾`build`中使用`make`這個指令編譯時，就會發現最終編譯出來的可執行檔確實會使用函式庫`ColorPrint`印出有顏色的文字。
-
-假如我們不想開啟`USE_COLOR_PRINT`使用函式庫`ColorPrint`，該怎麼做才好呢?有兩個做法可以使用:
-1. 先使用`cmake`產生編譯需要的檔案，然後使用`ccmake`關閉`USE_COLOR_PRINT`。
-2. 使用`cmake`產生`makefile`的時候給予參數，關閉`USE_COLOR_PRINT`。
-
-這兩種使用方式都可以關閉`USE_COLOR_PRINT`，差別在於使用情境。如果一個專案中已經先使用`cmake ..`在`build`資料夾中產生編譯所需的檔案，就會使用第一種作法。假如專案中還沒使用`cmake`產生編譯所需的檔案，就可以使用第二種作法。
-
-既然已經在`build`中透過`cmake ..`產生`makefile`，我們先試試使用第一種作法。`ccmake`是一個文字介面的工具，我們可以在終端機中透過這個工具調整編譯的選項，但是要注意一點，必須先使用`cmake`這個指令產生出編譯所需的檔案，才能夠使用`ccmake`。現在請先在終端機中透過指令`cd`切換工作目錄到`build`中，然後使用下面的指令:
-```bash
-$ ccmake ..
-```
-
-由於我們的當前工作目錄是`build`，而`CMakeLists.txt`在上一層的目錄中，所以我們需要在`ccmake`後面加上參數`..`，`ccmcake`才能夠取得編譯選項提供給我們調整。當我們使用`ccmake ..`時，會看到終端機出現一個使用者介面。在這個使用這介面中可以使用方向鍵的上下鍵或是`j`和`k`來移動游標，並且可以在想更改的選項上按下`Enter`鍵來修改。
-
-現在請用方向鍵或`j`和`k`移動游標到`USE_COLOR_PRINT`，並且按下`Enter`鍵。這個時候會發現`USE_COLOR_PRINT`原本是`ON`，更改後會變成`OFF`。接下來請按`c`鍵，這個時候`ccmake`就會根據當前的設定重新建置一次，然後按`q`鍵離開。
-
-如果我們去看`config.h`，就會發現這個標頭檔的內容更改了:
-```c
-/* #undef USE_COLOR_PRINT */
-```
-
-可以看到`config.h`沒有宣告巨集`USE_COLOR_PRINT`，這是因為我們透過`ccmake`關掉`USE_COLOR_PRINT`並且重新建置一次。假如我們編譯一次程式碼，也會發現最終編譯出的可執行檔也同樣不使用`ColorPrint`，而是使用`stddio.h`的`printf()`。
-
-現在我們來試試第二種方法，請先確認當前的工作目錄是`build`，然後使用下面的指令清除`build`中所有的檔案:
-```bash
-$ rm -rf *
-```
-
-接下來請使用下面的指令在資料夾`build`中建置出編譯所需的檔案:
-```bash
-$ cmake .. -DUSE_COLOR_PRINT=OFF
-```
-
-這邊解釋一下，`cmake`這個指令後面接上參數`-DUSE_COLOR_PRINT=OFF`，可以將編譯選項`USE_COLOR_PRINT`更改成`OFF`。基本上只要在`cmake`後面加上參數`-D`，就可以更改編譯選項。
-
-我們可以看到`config.h`也同樣不會宣告巨集`USE_COLOR_PRINT`，而且編譯以後也會發現最終可執行檔也同樣不會使用`ColorPrint`。
-
+回到原本的問題，我們該如何使用`ctest`來做單元測試?這個問題相當簡單，那就是判斷一個程式的回傳值是否為0。一般來說只要回傳值為0，就表示這個測試算成功，而回傳值不為0則表示測試失敗。當然實際在測試時沒有這麼簡單，因為某些情況下我們們故意讓一個測試失敗，來確認在失敗的情況下能否顯示正確的錯誤訊息和錯誤處理，這個時候我們就應該預期測試程式的回傳不為0。
